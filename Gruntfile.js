@@ -1,8 +1,17 @@
 module.exports = function(grunt) {
+  grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
 
   grunt.initConfig({
+    connect: {
+      server: {
+        options: {
+          port: 1119,
+          keepalive: true
+        }
+      }
+    },
     concat: {
       dist: {
         src: [

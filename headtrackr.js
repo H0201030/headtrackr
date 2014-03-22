@@ -55,9 +55,9 @@
  *	var htracker = new headtrackr.Tracker(); 
  *	htracker.init(videoInput, canvasInput); 
  *	htracker.start(); 
- * 
+ *
  * Optional parameters can be passed to Tracker like this:
- *	 new headtrackr.Tracker({ ui : false, altVideo : "somevideo.ogv" });
+ *	new headtrackr.Tracker({ ui : false, altVideo : "somevideo.ogv" });
  *
  * Optional parameters:
  *	ui {boolean} : whether to create messageoverlay with messages like "found face" (default is true)
@@ -83,7 +83,6 @@ headtrackr.rev = 2;
  * @constructor
  */
 headtrackr.Tracker = function(params) {
-	
 	if (!params) params = {};
 	
 	if (params.smoothing === undefined) params.smoothing = true;
@@ -125,80 +124,12 @@ headtrackr.Tracker = function(params) {
 		this.status = message;
 	}.bind(this);
 	
-	var insertAltVideo = function(video) {
-		if (params.altVideo !== undefined) {
-			if (supports_video()) {
-				if (params.altVideo.ogv && supports_ogg_theora_video()) {
-					video.src = params.altVideo.ogv;
-				} else if (params.altVideo.mp4 && supports_h264_baseline_video()) {
-					video.src = params.altVideo.mp4;
-				} else if (params.altVideo.webm && supports_webm_video()) {
-					video.src = params.altVideo.webm;
-				} else {
-					return false;
-				}
-				video.play();
-				return true;
-			}
-		} else {
-			return false;
-		}
-	}
-	
 	this.init = function(video, canvas) {
-		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-		window.URL = window.URL || window.webkitURL || window.msURL || window.mozURL;
-		// check for camerasupport
-		if (navigator.getUserMedia) {
-			headtrackerStatus("getUserMedia");
-			
-			// chrome 19 shim
-			var videoSelector = {video : true};
-			if (window.navigator.appVersion.match(/Chrome\/(.*?) /)) {
-				var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
-				if (chromeVersion < 20) {
-					videoSelector = "video";
-				}
-			};
-			
-			// opera shim
-			if (window.opera) {
-				window.URL = window.URL || {};
-				if (!window.URL.createObjectURL) window.URL.createObjectURL = function(obj) {return obj;};
-			}
-			
-			// set up stream
-			navigator.getUserMedia(videoSelector, function( stream ) {
-				headtrackerStatus("camera found");
-				if (video.mozCaptureStream) {
-				  video.mozSrcObject = stream;
-				} else {
-				  video.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
-				}
-				video.play();
-			}, function() {
-				headtrackerStatus("no camera");
-				insertAltVideo(video);
-			});
-		} else {
-			headtrackerStatus("no getUserMedia");
-			if (!insertAltVideo(video)) {
-				return false;
-			}
-		}
+		headtrackerStatus("getUserMedia");
 		
 		videoElement = video;
 		canvasElement = canvas;
 		canvasContext = canvas.getContext("2d");
-		
-		// resize video when it is playing
-		video.addEventListener('playing', function() {
-			if(video.width > video.height) {
-				video.width = 320;
-			} else {
-				video.height = 240;
-			}
-		}, false);
 		
 		// create ui if needed
 		if (params.ui) {
@@ -212,9 +143,6 @@ headtrackr.Tracker = function(params) {
 	}
 	
 	track = function() {
-		// Copy video to canvas
-		canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-		
 		// if facetracking hasn't started, initialize facetrackr
 		if (facetracker === undefined) {
 			facetracker = new headtrackr.facetrackr.Tracker({debug : params.debug, calcAngles : params.calcAngles});
@@ -352,23 +280,19 @@ headtrackr.Tracker = function(params) {
 	
 	var starter = function() {
 		// does some safety checks before starting
-		
 		// sometimes canvasContext is not available yet, so try and catch if it's not there...
 		try {
-      canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-      
-      // in some cases, the video sends events before starting to draw
-      // so check that we have something on video before starting to track
-      var canvasContent = headtrackr.getWhitebalance(canvasElement);
-      if (canvasContent > 0) {
-        run = true;
-        track();
-      } else {
-        window.setTimeout(starter, 100);
-      }
-    } catch (err) {
-      window.setTimeout(starter, 100);
-    }
+			var canvasContent = headtrackr.getWhitebalance(canvasElement);
+
+			if (canvasContent > 0) {
+				run = true;
+				track();
+			} else {
+				window.setTimeout(starter, 100);
+			}
+		} catch (err) {
+			window.setTimeout(starter, 100);
+		}
 	}
 	
 	this.start = function() {
@@ -377,13 +301,12 @@ headtrackr.Tracker = function(params) {
 		
 		// check if video is playing, if not, return false
 		if (!(videoElement.currentTime > 0 && !videoElement.paused && !videoElement.ended)) {
-			
 			run = true;
-			//set event
+			// listen to video playing event
 			videoElement.addEventListener('playing', starter, false);
 			
 			return true;
-		} else {			
+		} else {
 			starter();
 		}
 		
@@ -421,53 +344,28 @@ headtrackr.Tracker = function(params) {
 // bind shim
 // from https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
 
-if (!Function.prototype.bind) {	 
-	Function.prototype.bind = function (oThis) {	
-		if (typeof this !== "function") {	 
-			// closest thing possible to the ECMAScript 5 internal IsCallable function	
-			throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable");	
-		}	 
+if (!Function.prototype.bind) {
+	Function.prototype.bind = function (oThis) {
+		if (typeof this !== "function") {
+			// closest thing possible to the ECMAScript 5 internal IsCallable function
+			throw new TypeError("Function.prototype.bind - what is trying to be bound is not callable");
+		}
 	
-		var aArgs = Array.prototype.slice.call(arguments, 1),		
-				fToBind = this,		
-				fNOP = function () {},	
-				fBound = function () {	
-					return fToBind.apply(this instanceof fNOP	 
-																 ? this	 
-																 : oThis || window,	 
-															 aArgs.concat(Array.prototype.slice.call(arguments)));	
-				};	
+		var aArgs = Array.prototype.slice.call(arguments, 1),
+				fToBind = this,
+				fNOP = function () {},
+				fBound = function () {
+					return fToBind.apply(this instanceof fNOP ? this : oThis || window,
+							aArgs.concat(Array.prototype.slice.call(arguments)));
+				};
 	
-		fNOP.prototype = this.prototype;	
-		fBound.prototype = new fNOP();	
+		fNOP.prototype = this.prototype;
+		fBound.prototype = new fNOP();
 	
-		return fBound;	
-	};	
-}	 
-
-// video support utility functions
-
-function supports_video() {
-	return !!document.createElement('video').canPlayType;
+		return fBound;
+	};
 }
 
-function supports_h264_baseline_video() {
-	if (!supports_video()) { return false; }
-	var v = document.createElement("video");
-	return v.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
-}
-
-function supports_ogg_theora_video() {
-	if (!supports_video()) { return false; }
-	var v = document.createElement("video");
-	return v.canPlayType('video/ogg; codecs="theora, vorbis"');
-}
-
-function supports_webm_video() {
-	if (!supports_video()) { return false; }
-	var v = document.createElement("video");
-	return v.canPlayType('video/webm; codecs="vp8, vorbis"');
-}
 /**
  * Viola-Jones-like face detection algorithm
  * Some explanation here: http://liuliu.me/eyes/javascript-face-detection-explained/
