@@ -53,7 +53,7 @@
  *
  * Usage:
  *	var htracker = new headtrackr.Tracker(); 
- *	htracker.init(videoInput, canvasInput); 
+ *	htracker.init(canvasInput); 
  *	htracker.start(); 
  *
  * Optional parameters can be passed to Tracker like this:
@@ -68,7 +68,6 @@
  *	detectionInterval {number} : time we wait before doing a new facedetection (default is 20 ms)
  *	retryDetection {boolean} : whether to start facedetection again if we lose track of face (default is true)
  *	fov {number} : horizontal field of view of used camera in degrees (default is to estimate this)
- *	fadeVideo {boolean} : whether to fade out video when face is detected (default is false)
  *	cameraOffset {number} : distance from camera to center of screen, used to offset position of head (default is 11.5)
  *	calcAngles {boolean} : whether to calculate angles when doing facetracking (default is false)
  *	headPosition {boolean} : whether to calculate headposition (default is true)
@@ -98,19 +97,17 @@ headtrackr.Tracker = function(params) {
 		}
 	}
 	if (params.detectionInterval === undefined) params.detectionInterval = 20;
-	if (params.fadeVideo === undefined) params.fadeVideo = false;
 	if (params.cameraOffset === undefined) params.cameraOffset = 11.5;
 	if (params.calcAngles === undefined) params.calcAngles = false;
 	if (params.headPosition === undefined) params.headPosition = true;
 	
-	var ui, smoother, facetracker, headposition, canvasContext, videoElement, detector;
+	var ui, smoother, facetracker, headposition, canvasContext, detector;
 	var detectionTimer;
 	var fov = 0;
 	var initialized = true;
 	var run = false;
 	var faceFound = false;
 	var firstRun = true;
-	var videoFaded = false;
 	var headDiagonal = [];
 	
 	this.status = "";
@@ -124,10 +121,9 @@ headtrackr.Tracker = function(params) {
 		this.status = message;
 	}.bind(this);
 	
-	this.init = function(video, canvas) {
+	this.init = function(canvas) {
 		headtrackerStatus("getUserMedia");
 		
-		videoElement = video;
 		canvasElement = canvas;
 		canvasContext = canvas.getContext("2d");
 		
@@ -192,12 +188,6 @@ headtrackr.Tracker = function(params) {
 					debugContext.translate(-faceObj.x, -faceObj.y);
 				}
 				
-				// fade out video if it's showing
-				if (!videoFaded && params.fadeVideo) {
-					fadeVideo();
-					videoFaded = true;
-				}
-				
 				this.status = 'tracking';
 				
 				//check if we've lost tracking of face
@@ -210,12 +200,6 @@ headtrackr.Tracker = function(params) {
 						facetracker.init(canvasElement);
 						faceFound = false;
 						headposition = undefined;
-						
-						// show video again if it's not already showing
-						if (videoFaded) {
-							videoElement.style.opacity = 1;
-							videoFaded = false;
-						}
 					} else {
 						headtrackerStatus("lost");
 						this.stop();
@@ -299,16 +283,7 @@ headtrackr.Tracker = function(params) {
 		// check if initialized
 		if (!this.initialized) return false;
 		
-		// check if video is playing, if not, return false
-		if (!(videoElement.currentTime > 0 && !videoElement.paused && !videoElement.ended)) {
-			run = true;
-			// listen to video playing event
-			videoElement.addEventListener('playing', starter, false);
-			
-			return true;
-		} else {
-			starter();
-		}
+		starter();
 		
 		return true;
 	}
@@ -325,19 +300,6 @@ headtrackr.Tracker = function(params) {
 	
 	this.getFOV = function() {
 		return fov;
-	}
-	
-	// fade out videoElement
-	var fadeVideo = function() {
-		if (videoElement.style.opacity == "") {
-			videoElement.style.opacity = 0.98;
-			window.setTimeout(fadeVideo, 50);
-		} else if (videoElement.style.opacity > 0.30) {
-			videoElement.style.opacity -= 0.02;
-			window.setTimeout(fadeVideo, 50);
-		} else {
-			videoElement.style.opacity = 0.3;
-		}
 	}
 };
 
