@@ -10,7 +10,6 @@
  *	new headtrackr.Tracker({ ui : false, altVideo : "somevideo.ogv" });
  *
  * Optional parameters:
- *	ui {boolean} : whether to create messageoverlay with messages like "found face" (default is true)
  *	altVideo {object} : urls to any alternative videos, if camera is not found or not supported
  *		the format is : {'ogv' : 'somevideo.ogv', 'mp4' : 'somevideo.mp4', 'webm' : 'somevideo.webm'}
  *	smoothing {boolean} : whether to use smoothing (default is true)
@@ -36,7 +35,6 @@ headtrackr.Tracker = function(params) {
 	
 	if (params.smoothing === undefined) params.smoothing = true;
 	if (params.retryDetection === undefined) params.retryDetection = true;
-	if (params.ui === undefined) params.ui = true;
 	if (params.debug === undefined) {
 		params.debug = false;
 	} else {
@@ -51,7 +49,7 @@ headtrackr.Tracker = function(params) {
 	if (params.calcAngles === undefined) params.calcAngles = false;
 	if (params.headPosition === undefined) params.headPosition = true;
 	
-	var ui, smoother, facetracker, headposition, canvasContext, detector;
+	var smoother, facetracker, headposition, canvasContext, detector;
 	var detectionTimer;
 	var fov = 0;
 	var initialized = true;
@@ -76,11 +74,6 @@ headtrackr.Tracker = function(params) {
 		
 		canvasElement = canvas;
 		canvasContext = canvas.getContext("2d");
-		
-		// create ui if needed
-		if (params.ui) {
-			ui = new headtrackr.Ui();
-		}
 		
 		// create smoother if enabled
 		smoother = new headtrackr.Smoother(0.35, params.detectionInterval+15);

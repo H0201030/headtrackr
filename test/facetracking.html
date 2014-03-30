@@ -37,6 +37,8 @@
 
         <p id='gUMMessage'></p>
         <p>Status : <span id='headtrackerMessage'></span></p>
+        <p>WhiteBalance : <span id="whiteBalance"></span></p>
+        <button onclick="getWhiteBalance()">Get WhiteBalance</button>
         <p>
             <input type="button" onclick="htracker.stop();htracker.start();" value="reinitiate facedetection"></input>
             <br/><br/>
@@ -63,6 +65,7 @@
 
         // recordRTC
         var constraints = { video: true, audio: false };
+        var lastVideoFrame;
         var recorder = new RecordRTC({
             enable: constraints,
             videoElem: videoInput,
@@ -70,7 +73,7 @@
         });
         // the face tracking setup
         var htracker = new headtrackr.Tracker({
-            calcAngles : true,
+            calcAngles : false,
             ui : true,
             headPosition : false,
             debug : debugOverlay
@@ -79,9 +82,9 @@
         // get user media
         recorder.getMedia(function(stream) {
             recorder.setMedia(stream);
-            recorder.start();
+            lastVideoFrame = requestAnimationFrame(recorder.drawVideoFrame.bind(recorder));
 
-            htracker.init(videoInput, canvasInput);
+            htracker.init(canvasInput);
             htracker.start();
         }, function() {
             console.log("getMedia failed");
@@ -115,15 +118,17 @@
         // for each facetracking event received draw rectangle around tracked face on canvas
         document.addEventListener("facetrackingEvent", function( event ) {
             // clear canvas
-            overlayContext.clearRect(0,0,320,240);
+            overlayContext.clearRect(0,0,640,480);
             // once we have stable tracking, draw rectangle
             if (event.detection == "CS") {
                 overlayContext.translate(event.x, event.y)
-                overlayContext.rotate(event.angle-(Math.PI/2));
+                overlayContext.rotate(event.angle - (Math.PI/2));
                 overlayContext.strokeStyle = "#00CC00";
                 overlayContext.strokeRect((-(event.width/2)) >> 0, (-(event.height/2)) >> 0, event.width, event.height);
                 overlayContext.rotate((Math.PI/2)-event.angle);
                 overlayContext.translate(-event.x, -event.y);
+
+                console.log(event);
             }
         });
 
@@ -135,6 +140,11 @@
             } else {
                 debugCanvas.style.display = 'none';
             }
+        }
+
+        function getWhiteBalance() {
+            var message = document.getElementById('whiteBalance')
+            message.innerHTML += " " + headtrackr.getWhitebalance(canvasInput);
         }
         </script>
     </body>

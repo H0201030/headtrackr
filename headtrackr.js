@@ -60,7 +60,6 @@
  *	new headtrackr.Tracker({ ui : false, altVideo : "somevideo.ogv" });
  *
  * Optional parameters:
- *	ui {boolean} : whether to create messageoverlay with messages like "found face" (default is true)
  *	altVideo {object} : urls to any alternative videos, if camera is not found or not supported
  *		the format is : {'ogv' : 'somevideo.ogv', 'mp4' : 'somevideo.mp4', 'webm' : 'somevideo.webm'}
  *	smoothing {boolean} : whether to use smoothing (default is true)
@@ -86,7 +85,6 @@ headtrackr.Tracker = function(params) {
 	
 	if (params.smoothing === undefined) params.smoothing = true;
 	if (params.retryDetection === undefined) params.retryDetection = true;
-	if (params.ui === undefined) params.ui = true;
 	if (params.debug === undefined) {
 		params.debug = false;
 	} else {
@@ -101,7 +99,7 @@ headtrackr.Tracker = function(params) {
 	if (params.calcAngles === undefined) params.calcAngles = false;
 	if (params.headPosition === undefined) params.headPosition = true;
 	
-	var ui, smoother, facetracker, headposition, canvasContext, detector;
+	var smoother, facetracker, headposition, canvasContext, detector;
 	var detectionTimer;
 	var fov = 0;
 	var initialized = true;
@@ -126,11 +124,6 @@ headtrackr.Tracker = function(params) {
 		
 		canvasElement = canvas;
 		canvasContext = canvas.getContext("2d");
-		
-		// create ui if needed
-		if (params.ui) {
-			ui = new headtrackr.Ui();
-		}
 		
 		// create smoother if enabled
 		smoother = new headtrackr.Smoother(0.35, params.detectionInterval+15);
@@ -1435,79 +1428,6 @@ headtrackr.facetrackr.TrackObj = function() {
   }
 };
 
-/**
- * @author auduno / github.com/auduno
- * @constructor
- */
- 
-headtrackr.Ui = function() {
-
-	var timeout;
-
-	// create element and attach to body
-	var d = document.createElement('div'),
-        d2 = document.createElement('div'),
-        p = document.createElement('p');
-	d.setAttribute('id', 'headtrackerMessageDiv');
-	
-	d.style.left = "20%";
-	d.style.right = "20%";
-	d.style.top = "30%";
-	d.style.fontSize = "90px";
-	d.style.color = "#777";
-	d.style.position = "absolute";
-	d.style.fontFamily = "Helvetica, Arial, sans-serif";
-	d.style.zIndex = '100002';
-	
-	d2.style.marginLeft = "auto";
-	d2.style.marginRight = "auto";
-	d2.style.width = "100%";
-	d2.style.textAlign = "center";
-	d2.style.color = "#fff";
-	d2.style.backgroundColor = "#444";
-	d2.style.opacity = "0.5";
-	
-	p.setAttribute('id', 'headtrackerMessage');
-	d2.appendChild(p);
-	d.appendChild(d2);
-	document.body.appendChild(d);
-  
-  var supportMessages = {
-    "no getUserMedia" : "getUserMedia is not supported in your browser :(",
-    "no camera" : "no camera found :("
-  };
-  
-  var statusMessages = {
-    "whitebalance" : "Waiting for camera whitebalancing",
-    "detecting" : "Please wait while camera is detecting your face...",
-    "hints" : "We seem to have some problems detecting your face. Please make sure that your face is well and evenly lighted, and that your camera is working.",
-    "redetecting" : "Lost track of face, trying to detect again..",
-    "lost" : "Lost track of face :(",
-    "found" : "Face found! Move your head!"
-  };
-  
-  var override = false;
-  
-	// function to call messages (and to fade them out after a time)
-  document.addEventListener("headtrackrStatus", function(event) {
-    if (event.status in statusMessages) {
-      window.clearTimeout(timeout);
-		  if (!override) {
-		    var messagep = document.getElementById('headtrackerMessage');
-		    messagep.innerHTML = statusMessages[event.status];
-		    timeout = window.setTimeout(function() {messagep.innerHTML = ''; }, 3000);
-		  }
-		} else if (event.status in supportMessages) {
-		  override = true;
-		  window.clearTimeout(timeout);
-		  var messagep = document.getElementById('headtrackerMessage');
-		  messagep.innerHTML = supportMessages[event.status];
-		  window.setTimeout(function() {messagep.innerHTML = 'added fallback video for demo'; }, 2000);
-		  window.setTimeout(function() {messagep.innerHTML = '';override = false;}, 4000);
-		}
-  }, true);
-	
-}
 /**
  * Calculates an estimate of the position of the head of the user in relation to screen or camera
  *   based on input from facetrackrObject

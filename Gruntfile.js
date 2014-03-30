@@ -24,7 +24,6 @@ module.exports = function(grunt) {
             'src/smoother.js',
             'src/camshift.js',
             'src/facetrackr.js',
-            'src/ui.js',
             'src/headposition.js',
             'src/controllers.js',
             'src/footer.js.txt'],
